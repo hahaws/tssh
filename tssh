@@ -127,13 +127,14 @@ else
         spawn ssh $user$host -p $port
         expect {
             \"*yes/no*\" { send \"yes\r\"; exp_continue }
-            \"*password:\" { send \"$passwd\r\" }
+            \"*password:\" { send \"$passwd\r\"; exp_continue }
+            eof
         }
         expect {
             \"*Permission denied,*\" { send_user \"\\n\033\[01;31m$ErrorPasswd\033\[0m\\n\"; exit; }
             default { interact }
+            eof
         }
-        interact
     "
 fi 
 
