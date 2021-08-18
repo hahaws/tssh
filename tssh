@@ -1,0 +1,116 @@
+#!/bin/bash
+
+script_abs=$(readlink -f "$0")
+script_dir=$(dirname $script_abs)
+default_config=$script_dir"/tssh.ini"
+
+NotInstall="\e[31mError.\e[0m\r\n    Please check expect was installed on your system."
+command -v expect > /dev/null 2>&1 || { echo >&2 -e "$NotInstall"; exit 1; }
+
+ConfigFile=$1
+
+# config file default to ~/.ssh.ini
+if [ -z "$ConfigFile" ]; then
+    ConfigFile=$default_config
+fi
+
+# show help
+if [ "$ConfigFile" = "-h" ]; then
+    echo -e "
+tssh [config path][-h]
+
+-h: show help
+
+config_path: specify config file default $default_config
+
+config file format:
+[name]
+host=host
+port=port         # default 22
+user=user         # default current user
+passwd=passwd     # if not specified, enter manually
+"
+    exit 0
+fi
+
+# check config file is exists or not
+if [ ! -f "$ConfigFile" ]; then
+    echo -e "\e[31mConfig File $ConfigFile Not Exists\e[0m"
+    exit 1
+fi
+
+# Find profile like [xxx]
+profile=`awk '$0 ~ /\[[^\]]*\]/ {print $0}' $ConfigFile | awk -F '[][]' '{print $2}'`
+
+# specify name by cgi or input 
+Name=$2
+if [ ! -n "$Name" ]; then
+    echo "---> Select Name to connect"
+    for name in $profile
+    do
+        echo "         $name"
+    done
+    echo -n "---> Name: "
+    read Name
+fi
+
+# check name is in profile
+Flag=0
+for p in $profile
+do
+    if [ $Name = $p ]; then
+        Flag=1
+    fi
+done
+
+if [ $Flag -eq 0 ]; then
+    echo -e "\e[31m$Name Not in config file $ConfigFile\e[0m"
+    exit 1
+fi
+
+
+# find host, port, user, passwd
+host=`awk -F= '/\['"$Name"'\]/{a=1}a==1&&$1~/host/{print $2;exit}' $ConfigFile`
+port=`awk -F= '/\['"$Name"'\]/{a=1}a==1&&$1~/port/{print $2;exit}' $ConfigFile`
+user=`awk -F= '/\['"$Name"'\]/{a=1}a==1&&$1~/user/{print $2;exit}' $ConfigFile`
+passwd=`awk -F= '/\['"$Name"'\]/{a=1}a==1&&$1~/passwd/{print $2;exit}' $ConfigFile`
+
+# host could not be null
+if [ -z "$host" ]; then
+    echo -e "\e[31mHost Not Found for $Name\e[0m"
+    exit 1
+fi
+
+# port default to 22
+if [ -z "$port" ]; then
+    echo -e "\e[32mUse default port: 22\e[m"
+    port="22"
+fi
+
+if [ -z "$user" ]; then
+    echo -e "\e[31mUser Not Found for $Name. Use default\e[0m"
+    user=""
+else 
+    user=$user"@"
+fi
+
+ErrorPasswd="Error Password. Please Check in config file"
+
+if [ -z "$passwd" ]; then
+    ssh $user$host -p $port
+else
+    expect -c "
+        spawn ssh $user$host -p $port
+        expect {
+            \"*yes/no*\" { send \"yes\r\"; exp_continue }
+            \"*password:\" { send \"$passwd\r\" }
+        }
+        expect {
+            \"*Permission denied,*\" { send_user \"\\n\033\[01;31m$ErrorPasswd\033\[0m\\n\"; exit; }
+            default { interact }
+        }
+        interact
+    "
+fi 
+
+
