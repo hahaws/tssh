@@ -112,7 +112,7 @@ if [ -z "$port" ]; then
 fi
 
 if [ -z "$user" ]; then
-    echo -e "\e[31mUser Not Found for $Name. Use default\e[0m"
+    echo -e "\e[32mUser Not Found for $Name. Use default\e[0m"
     user=""
 else 
     user=$user"@"
