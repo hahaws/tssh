@@ -1,7 +1,7 @@
 # tssh
 use script to quickly connect to ssh
 
-## Usage
+## Install
 
 1. clone project to any folder
   ```shell
@@ -19,8 +19,12 @@ use script to quickly connect to ssh
 3. edit config file like
   ```
   [scott]
-  host=192.168.1.1
-  port=22
-  user=scott
-  passwd=scott_password
+  host=10.0.0.1            # must needed
+  port=22                  # default 22
+  user=scott               # default current user
+  passwd=scott_password    # if not specified, enter manually
   ```
+  
+## Usage
+
+use `./tssh -h` to check usage
