@@ -7,8 +7,13 @@ use script to quickly connect to ssh
   ```shell
   git clone https://github.com/hahaws/tssh.git ~/.tssh
   ```
+  
+2. change file mode to executable
+```
+chmod +x ~/.tssh/tssh
+```
  
-2. add to path
+3. add to path
   ```
   # .bashrc
   export PATH=$PATH:~/.tssh
@@ -16,7 +21,7 @@ use script to quickly connect to ssh
   # source ~/.bashrc
   ```
   
-3. edit config file like
+4. edit config file like
   ```
   [scott]
   host=10.0.0.1            # must needed
